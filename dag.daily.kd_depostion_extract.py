@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
-import psycopg
+import psycopg2
 from sshtunnel import SSHTunnelForwarder
 import tempfile
 import os
@@ -40,7 +40,7 @@ def get_connection():
 
     tunnel.start()
 
-    conn = psycopg.connect(
+    conn = psycopg2.connect(
         host=DB_HOST,
         port=tunnel.local_bind_port,
         dbname=DB_NAME,
