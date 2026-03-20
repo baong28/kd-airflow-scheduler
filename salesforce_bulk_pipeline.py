@@ -64,6 +64,8 @@ def get_pg_conn_via_ssh():
 # =========================
 # TASK: BULK + COPY (SSH)
 # =========================
+import csv
+
 def sync_window(start, end):
     sf = get_sf()
 
@@ -74,7 +76,7 @@ def sync_window(start, end):
         print(f"🚀 Window: {start} → {end}")
 
         # =========================
-        # BULK QUERY
+        # BULK QUERY (FIXED)
         # =========================
         soql = f"""
         SELECT Id, Name, LastModifiedDate
@@ -83,25 +85,29 @@ def sync_window(start, end):
           AND LastModifiedDate < {end.strftime('%Y-%m-%dT%H:%M:%SZ')}
         """
 
-        job = sf.bulk2.create_query_job(object_name="kdlaw__Matter__c")
-        sf.bulk2.query(job_id=job["id"], query=soql)
-
-        results = sf.bulk2.get_query_results(job["id"])
+        results = sf.bulk2.Kdlaw__Matter__c.query(soql)
 
         # =========================
-        # WRITE TEMP CSV
+        # WRITE TEMP CSV (FIXED)
         # =========================
-        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
-        tmp.write(results)
+        tmp = tempfile.NamedTemporaryFile(delete=False, mode="w", newline="", suffix=".csv")
+        writer = None
+
+        for row in results:
+            if writer is None:
+                writer = csv.DictWriter(tmp, fieldnames=row.keys())
+                writer.writeheader()
+            writer.writerow(row)
+
         tmp.close()
 
         # =========================
-        # COPY (QUA SSH TUNNEL)
+        # COPY TO POSTGRES
         # =========================
         with open(tmp.name, "r") as f:
             cursor.copy_expert(
                 """
-                COPY kdlaw_matter_staging
+                COPY kdlaw_matter_staging (id, name, lastmodifieddate)
                 FROM STDIN WITH CSV HEADER
                 """,
                 f
@@ -117,7 +123,6 @@ def sync_window(start, end):
         conn.close()
         tunnel.stop()
         print("🔒 Tunnel closed")
-
 
 # =========================
 # MERGE (SSH)
