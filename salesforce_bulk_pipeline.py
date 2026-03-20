@@ -14,12 +14,11 @@ import psycopg2
 
 PIPELINE_NAME = "kdlaw_matter_bulk"
 
-
 # =========================
 # SALESFORCE CONNECT
 # =========================
 def get_sf():
-    conn = BaseHook.get_connection("salesforce_conn")
+    conn = BaseHook.get_connection("my_salesforce")
     extra = conn.extra_dejson
 
     return Salesforce(
