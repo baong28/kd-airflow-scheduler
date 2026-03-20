@@ -84,25 +84,32 @@ def sync_window(start, end):
           AND LastModifiedDate < {end.strftime('%Y-%m-%dT%H:%M:%SZ')}
         """
 
-        results = sf.bulk2.Kdlaw__Matter__c.query(soql)
+        results = sf.bulk2.kdlaw__Matter__c.query(soql)
 
         # =========================
         # WRITE TEMP CSV (FIXED)
         # =========================
         tmp = tempfile.NamedTemporaryFile(delete=False, mode="w", newline="", suffix=".csv")
         writer = None
+        total = 0
 
         for row in results:
+            # ⚠️ guard: skip nếu không phải dict
+            if not isinstance(row, dict):
+                continue
+
             if writer is None:
                 writer = csv.DictWriter(tmp, fieldnames=row.keys())
                 writer.writeheader()
+
             writer.writerow(row)
+            total += 1
 
         tmp.close()
 
-        # =========================
-        # COPY TO POSTGRES
-        # =========================
+        print(f"📄 Rows written: {total}")
+
+        # COPY
         with open(tmp.name, "r") as f:
             cursor.copy_expert(
                 """
