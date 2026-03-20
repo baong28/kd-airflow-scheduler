@@ -178,7 +178,7 @@ def update_watermark():
 # =========================
 with DAG(
     dag_id="salesforce_bulk_kdlaw_ssh",
-    start_date=datetime(2024, 1, 1),
+    start_date=datetime(2026, 1, 1),
     schedule_interval="@hourly",
     catchup=False,
     max_active_runs=1,
@@ -186,7 +186,7 @@ with DAG(
 ) as dag:
 
     windows = []
-    start = datetime(2024, 1, 1)
+    start = datetime(2026, 1, 1)
     end = datetime.utcnow()
     step = timedelta(days=1)
 
