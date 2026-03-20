@@ -28,35 +28,32 @@ if not SSH_PRIVATE_KEY:
 # HELPER: SSH + DB CONNECT
 # =========================
 def get_connection():
-    #key_file = tempfile.NamedTemporaryFile(delete=False)
-    #key_file.write(SSH_PRIVATE_KEY.encode())
-    #key_file.close()
-    
-    with tempfile.NamedTemporaryFile(delete=False, mode="w") as key_file:
-        key_file.write(SSH_PRIVATE_KEY.strip())
-        ssh_key_path = key_file.name
+    key_file = tempfile.NamedTemporaryFile(delete=False, mode="w")
+    key_file.write(SSH_PRIVATE_KEY.strip())
+    key_file.close()
 
-        tunnel = SSHTunnelForwarder(
-            (SSH_HOST, SSH_PORT),
-            ssh_username=SSH_USER,
-            ssh_pkey=ssh_key_path, #key_file.name,
-            allow_agent=False,
-            host_pkey_directories=[],
-            remote_bind_address=(DB_HOST, DB_PORT),
-        )
+    ssh_key_path = key_file.name
 
-        tunnel.start()
+    tunnel = SSHTunnelForwarder(
+        (SSH_HOST, SSH_PORT),
+        ssh_username=SSH_USER,
+        ssh_pkey=ssh_key_path,
+        allow_agent=False,
+        host_pkey_directories=[],
+        remote_bind_address=(DB_HOST, DB_PORT),
+    )
 
-        conn = psycopg2.connect(
-            host=DB_HOST,
-            port=tunnel.local_bind_port,
-            dbname=DB_NAME,
-            user=DB_USER,
-            password=DB_PASSWORD,
-        )
+    tunnel.start()
 
-        return conn, tunnel
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        port=tunnel.local_bind_port,
+        dbname=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD,
+    )
 
+    return conn, tunnel
 
 # =========================
 # TASK 1: GET FILENAMES
